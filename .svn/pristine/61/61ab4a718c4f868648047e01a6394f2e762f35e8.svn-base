@@ -1,0 +1,92 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "helpers.c"
+
+#define LENGTH_FLAG "-len"
+#define MAX_FLAG "-max"
+#define FILE_PREFIX_DOT '.'
+#define FILE_PREFIX_SLASH '/'
+
+
+int main(int argc, char const *argv[]) {
+  // Checking command line arguments
+  // Checking number of arguments given is in bounds
+  if (argc > 6) {
+    fprintf(stderr, "Too many command line arguments specified.");
+    return -1;
+  }
+
+  // Checking individual arguments
+  int len=0, max=0;
+  FILE* directory=NULL;
+
+  for (int i = 1; i < argc; i++) {
+    if (!argv[i]) {
+      fprintf(stderr, "Cannot give whitespace as comamnd.\n");
+      return -1;
+    }
+
+    // -len flag checks
+    if (strcmp(argv[i], LENGTH_FLAG) == 0) {
+      if (len) {
+        fprintf(stderr, "Cannot have '-len' flag twice.\n");
+        return -1;
+      }
+
+      // Checking there is an argument after the '-len' flag
+      if (!((i + 1) < argc)) {
+        fprintf(stderr, "There must be an argument after the '-len' flag.\n");
+        return -1;
+      }
+
+      len = atoi(argv[++i]);
+      if (len < 3 || len > 9) {
+        fprintf(stderr, "Argument after '-len' must be between 3 and 9 inclusive.\n");
+        return -1;
+      } 
+
+    // -max flag checks
+    } else if (strcmp(argv[i], MAX_FLAG) == 0) {
+      if (max) {
+        fprintf(stderr, "Cannot have '-max' flag twice.\n");
+        return -1;
+      }
+
+      // Checking there is an argument after the '-max' flag
+      if (!((i + 1) < argc)) {
+        fprintf(stderr, "There must be an argument after the '-len' flag.\n");
+        return -1;
+      }
+
+      max = atoi(argv[++i]);
+      if (max < 3 || max > 9) {
+        fprintf(stderr, "Argument after '-max' must be between 3 and 9 inclusive.\n");
+        return -1;
+      }
+
+    // Directory argument checking
+    // Checking the dictonary path begins with '.' or '/'.
+    } else if ((strchr(argv[i], FILE_PREFIX_DOT) != NULL) || (strchr(argv[i], FILE_PREFIX_SLASH) != NULL)) {
+      directory = fopen(argv[i], "r");
+
+      // Checking exists and can be read
+      if (directory == NULL) {
+        fprintf(stderr, "Cannot read file. Check path.\n");
+
+
+        return -1;
+      }
+
+    // Checking all other arguments passed
+    } else {
+      fprintf(stderr, "Incorrect arguments passed.\n");
+      return -1;
+    }
+  }
+
+  printf("LEN: %d, MAX: %d, DIR: %p\n", len, max, (void*)directory);
+
+  return 0;
+}

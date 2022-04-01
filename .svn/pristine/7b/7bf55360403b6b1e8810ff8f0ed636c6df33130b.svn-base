@@ -1,0 +1,293 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <csse2310a1.h>
+#include <ctype.h>
+
+#include "main.h"
+
+#define LENGTH_FLAG "-len"
+#define MAX_FLAG "-max"
+#define FILE_PREFIX_DOT '.'
+#define FILE_PREFIX_SLASH '/'
+#define HIDDEN_LETTER '-'
+#define NEW_LINE '\n'
+#define NULL_CHARACTER '\0'
+
+#define DEFAULT_GUESSES 6
+#define DEFAULT_WORD_LENGTH 5
+#define DEFAULT_DICT_PATH "/usr/share/dict/words"
+#define GUESS_MAX_LENGTH 50
+
+#define DEFAULT_DICT_LENGTH 10
+
+
+int main(int argc, char* argv[]) {
+    // Checking command line arguments
+    // Checking number of arguments given is in bounds
+    if (argc > 6) {
+        usage_error();
+    }
+
+    // Checking individual arguments
+    int len = 0, max = 0;
+    FILE* wordList = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (!argv[i]) {
+            stderr_error(1, "Cannot give whitespace as comamnd.\n");
+        }
+
+        // -len flag checks
+        if (strcmp(argv[i], LENGTH_FLAG) == 0) {
+            if (len) {
+                usage_error();
+            }
+
+            // Checking argument after the '-len' flag and it is integer
+            if (!((i + 1) < argc) || !isdigit(*argv[i + 1])) {
+                usage_error();
+            }
+
+            len = atoi(argv[++i]);
+            if (len < 3 || len > 9) {
+                usage_error();
+            } 
+
+        // -max flag checks
+        } else if (strcmp(argv[i], MAX_FLAG) == 0) {
+            if (max) {
+                usage_error();
+            }
+
+            // Checking argument after the '-max' flag and it is integer
+            if (!((i + 1) < argc) || (strlen(argv[i + 1]) != 1) || !isdigit(*argv[i + 1])) {
+                usage_error();
+            }
+
+            max = atoi(argv[++i]);
+            if (max < 3 || max > 9) {
+                usage_error();
+            }
+
+        // wordList argument checking
+        // Checking the dictonary path begins with '.' or '/'.
+        } else if ((strchr(argv[i], FILE_PREFIX_DOT) != NULL) || (
+                strchr(argv[i], FILE_PREFIX_SLASH) != NULL)) {
+            wordList = fopen(argv[i], "r");
+
+            // Checking exists and can be read
+            if (wordList == NULL) {
+                fprintf(stderr, "wordle: dictionary file \"%s\" cannot be"
+                        " opened\n", argv[i]);
+                return 2;
+            }
+
+        // Checking all other arguments passed
+        } else {
+            usage_error();
+        }
+    }
+
+    // Using default wordlist if none has been specified
+    if (wordList == NULL) {
+        wordList = fopen(DEFAULT_DICT_PATH, "r");
+    }
+
+    init_game(len, max, wordList);
+
+    return 1;
+}
+
+int init_game(int wordLen, int maxGuesses, 
+        FILE* wordList) {
+    // If '-len' flag not specified, setting word length to default of 5
+    int length = (wordLen == 0) ? DEFAULT_WORD_LENGTH : wordLen;
+    // If '-len' flag not specified, setting word length to default of 6
+    int attemptsRemaining = (maxGuesses == 0) ? DEFAULT_GUESSES : maxGuesses;
+
+    char* answer = get_random_word(length);
+    char guess[GUESS_MAX_LENGTH];
+
+    // Generating dictionary from file
+    int dictLength = 0;
+    char** dictionary = generate_dictionary(wordList, &dictLength, length);
+    
+    // printf("=====\n");
+    // printf("Read: %d\n", dictLength);
+    // for (int i=0; i<dictLength; i++) {
+    //     printf("%s\n", dict[i]);
+    // }
+    // printf("--%d--\n", check_word_exists(dict, dictLength, "cunts"));
+    // printf("=====\n");
+    // free_dictionary(dict, dictLength);
+    // return 0;
+
+    // printf("DEBUG answer: %s\n", answer);
+    
+    printf("Welcome to Wordle!\n");
+    while (attemptsRemaining > 0) {
+        // Printing appropriate prompt message
+        if (attemptsRemaining == 1) {
+            printf("Enter a %d letter word (last attempt):\n", length);
+        } else {
+            printf("Enter a %d letter word (%d attempts remaining):\n", 
+                    length, attemptsRemaining);
+        }
+
+        // Getting user input and checking is not EOF
+        if (scanf("%s", guess) == EOF) {
+            fprintf(stderr, "Bad luck - the word is \"%s\".\n", answer);
+            exit(3);
+        }
+
+        // Checking 'guess' contains only alphabetical characters
+        if (!is_alphabetical(guess)) {
+            printf("Words must contain only letters - try again.\n");
+            continue;
+        }
+
+        // Checking 'guess' is of the correct length
+        if (strlen(guess) != length) {
+            printf("Words must be %d letters long - try again.\n", length);
+            continue;
+        };
+        
+        // Checking guess exists is the dictionary.
+        if (check_word_exists(dictionary, dictLength, guess) == 0) {
+            printf("Word not found in the dictionary - try again.\n");
+            continue;
+        }
+
+        // Ensuring guess is case insensitive
+        to_lower_word(guess);
+
+        // Exiting if 'guess' contains the correct word
+        if (strcmp(guess, answer) == 0) {
+            printf("Correct!\n");
+            exit(0);
+        } else {
+            print_letter_matching(answer, length, guess);
+        }
+
+        attemptsRemaining--;
+    }
+
+    // Exiting if user has reached the max number of attempts
+    fprintf(stderr, "Bad luck - the word is \"%s\".\n", answer);
+    exit(3);
+}
+
+//
+// HELPERS
+//
+void stderr_error(int code, char* msg) {
+    fprintf(stderr, msg);
+    exit(code);
+}
+
+void usage_error(void) {
+    stderr_error(1, "Usage: wordle [-len word-length] [-max max-guesses]"
+            " [dictionary]\n");
+}
+
+int is_alphabetical(char string[]) {
+    int length = strlen(string);
+    for (int i = 0; i < length; i++) {
+        if (isalpha(string[i]) == 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+void to_lower_word(char* guess) {
+    for (int i = 0; guess[i]; i++) {
+        guess[i] = tolower(guess[i]);
+    }
+}
+
+char** generate_dictionary(FILE* file, int* numWords, int answerLength) {
+    char** dictionary;
+    int maxDictWords = DEFAULT_DICT_LENGTH;
+    char tmpWord[GUESS_MAX_LENGTH];
+
+    dictionary = calloc(DEFAULT_DICT_LENGTH, sizeof(char*));
+
+    while(fgets(tmpWord, GUESS_MAX_LENGTH, file)) {
+        int length = strlen(tmpWord);
+
+        //Removing new line
+        if (tmpWord[length - 1] == '\n') {
+            tmpWord[length - 1] = '\0';
+            length--;
+        }
+
+        // Only adding words that are of length 'answerLength'
+        if (strlen(tmpWord) != answerLength) {
+          continue;
+        }
+
+        dictionary[(*numWords)++] = strdup(tmpWord);
+
+        // Increasing size of dictionary by 'DEFAULT_DICT_LENGTH' if
+        // reached size limit
+        if (*numWords == maxDictWords) {
+            dictionary = realloc(dictionary, 
+                    (maxDictWords + DEFAULT_DICT_LENGTH) * sizeof(char*));
+            maxDictWords += DEFAULT_DICT_LENGTH;
+        }
+    }
+    return dictionary;
+}
+
+void free_dictionary(char** dictionary, int numWords) {
+    for (int i = 0; i < numWords; i++) {
+        free(dictionary[i]);
+    }
+    free(dictionary);
+}
+
+int check_word_exists(char **dictionary, int numWords, char* word) {
+    // Doing a linear search on dictionary.
+    for (int i = 0; i < numWords; i++) {
+        if (strcmp(dictionary[i], word) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void print_letter_matching(char* answer, 
+        int length, char* guess) {
+    // Defining the final string to be printed
+    char* output = (char*)calloc(length, sizeof(char));
+    // Sequence of character flags so that a letter match is only printed once
+    char* lettersFound = (char*)calloc(length, sizeof(char));
+    int lettersFoundLength = 0;
+
+    // First iteration: Finding correct letters
+    for (int i = 0; i < length; i++) {
+        if (guess[i] == answer[i]) {
+            output[i] = toupper(guess[i]);
+            lettersFound[lettersFoundLength++] = guess[i];
+        }
+    }
+
+    // Second iteration: Finding other existing letters
+    for (int i = 0; i < length; i++) {
+        // Skipping if element exists in 'answer' position 'i'
+        if (output[i] != 0) {
+            continue;
+        
+        // Showing letter if it exists in the answer and has not been seen
+        } else if ((strchr(answer, guess[i]) != NULL) && 
+                (strchr(lettersFound, guess[i]) == NULL)) {
+            output[i] = guess[i];
+            lettersFound[lettersFoundLength++] = guess[i];
+        } else {
+            output[i] = HIDDEN_LETTER;
+        }
+    }
+    printf("%s\n", output);
+}

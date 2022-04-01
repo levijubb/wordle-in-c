@@ -1,0 +1,7 @@
+#include <stdio.h>
+
+int main(int argc, char const *argv[])
+{
+  fprintf(stderr, "ERROR: Bruh why you running this programm. It does nothing.\n");
+  return 0;
+}

@@ -1,0 +1,9 @@
+#include <stdio.h>
+
+int main(int argc, char const *argv[])
+{
+  printf("verrrr nice\n");
+  printf("I like\n");
+  printf("Great success\n");
+  return 0;
+}

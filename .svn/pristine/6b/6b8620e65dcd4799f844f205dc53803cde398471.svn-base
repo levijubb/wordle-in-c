@@ -1,0 +1,22 @@
+/* init_game()
+* −−−−−−−−−−−−−−−
+* Starts the game with the given parametres.
+*
+* len: value of the '-len' flag if it is given
+* 
+* max: value of the '-max' flag if it is given
+* −−−−−−−−−−−−−−−
+*/
+int init_game(int wordLen, int maxGuesses, FILE* dictionary);
+
+
+/* is_alphabetical()
+* −−−−−−−−−−−−−−−
+* Returns 1 if the given string is alphabetical and 0 otherwise.
+*
+* string: the string to be checked.
+* −−−−−−−−−−−−−−−
+*/
+int is_alphabetical(char string[]);
+
+void to_lower_word(char *guess);

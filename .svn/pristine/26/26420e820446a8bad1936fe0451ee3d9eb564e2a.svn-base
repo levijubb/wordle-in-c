@@ -1,0 +1,97 @@
+/* init_game()
+* −−−−−−−−−−−−−−−
+* Starts the game with the given parametres.
+*
+* len: value of the '-len' flag if it is given
+* 
+* max: value of the '-max' flag if it is given
+* −−−−−−−−−−−−−−−
+*/
+int init_game(
+    int wordLen, 
+    int maxGuesses, 
+    FILE* wordList
+    );
+
+/* stderr_error()
+* −−−−−−−−−−−−−−−
+* Prints the specified 'msg' to 'stderrr' before exiting with code 'code'
+*
+* code: The code to exit with.
+* 
+* msg: The message to print to stderr.
+* −−−−−−−−−−−−−−−
+*/
+void stderr_error(int code, char* msg);
+
+/* usage_error()
+* −−−−−−−−−−−−−−−
+* Prints incorrect usage error to 'stderr' and exits with code 1.
+* −−−−−−−−−−−−−−−
+*/
+void usage_error(void);
+
+/* is_alphabetical()
+* −−−−−−−−−−−−−−−
+* Returns 1 if the given string is alphabetical and 0 otherwise.
+*
+* string: the string to be checked.
+* −−−−−−−−−−−−−−−
+*/
+int is_alphabetical(char string[]);
+
+/* to_lower_word()
+* −−−−−−−−−−−−−−−
+* Mutates a string pointer so that all letters are lowercase.
+*
+* guess: the string pointer to be mutated.
+* −−−−−−−−−−−−−−−
+*/
+void to_lower_word(char *guess);
+
+
+/* print_letter_matching()
+* −−−−−−−−−−−−−−−
+* Prints a string of letters that shows which guessed letters match the answer.
+*
+* answer: The answer string.
+* 
+* length: The length of 'answer' and 'guess.'
+* 
+* guess: The guess string.
+* −−−−−−−−−−−−−−−
+*/
+void print_letter_matching(
+    char* answer, 
+    int length, 
+    char* guess);
+
+/* generate_dictionary()
+* −−−−−−−−−−−−−−−
+* Generates an array of strings from file 'file.' Will only store strings that
+* aret the same length as 'answerLength.'
+*
+* file: The file to be read.
+* 
+* numWords: The number of string that are raed into the array.
+* 
+* answerLength: The length that words must match to be read into array.
+* −−−−−−−−−−−−−−−
+*/
+char** generate_dictionary(FILE* file, 
+        int* numWords, 
+        int answerLength);
+
+/* free_dictionary()
+* −−−−−−−−−−−−−−−
+* Frees a 2D array of strings.
+*
+* dictionary: The dictionary to be freed.
+* 
+* numWords: The number of strings stored in the dictionary.
+* −−−−−−−−−−−−−−−
+*/
+void free_dictionary(char** dictionary, 
+        int numWords);
+
+int check_word_exists(char **dictionary, int numWords, char* word);
